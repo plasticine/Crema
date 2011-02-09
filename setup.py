@@ -4,7 +4,6 @@ setup(
     name='crema',
     version=__import__('crema').__version__,
     description='A middleware class to help out with coffeescript.',
-    # Get more strings from http://www.python.org/pypi?:action=list_classifiers
     author='Justin Morris',
     author_email='justin@pixelbloom.com',
     url='http://pixelbloom.github.com/crema/',
