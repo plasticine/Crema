@@ -3,6 +3,7 @@ import logging
 import subprocess, shlex, threading, time, signal
 from subprocess import CalledProcessError
 from django.conf import settings
+from django.http import HttpResponse
 
 logger = logging.getLogger(__name__)
 
@@ -39,29 +40,35 @@ class CremaMiddleware(object):
         """
         
         """
-        if response.status_code == 200:
+        if response['Content-Type'].split(';')[0] in CONTENT_TYPES_TO_BREW:
             path = request.META['PATH_INFO']
-            if path.endswith('.js'):
-                print '[Crema] Brewing Coffeescript for: "%s"' % path
-                self.brew(path)
+            for directory, dirnames, filenames in os.walk(self.unbrewed):
+                for file in filenames:
+                    if file.endswith('.coffee'):
+                        print '[Crema] Brewing Coffeescript for: "%s"' % os.path.join(directory, file)
+                        brew = self.brew(os.path.join(directory, file))
+                        if brew is not 0:
+                            return HttpResponse('<pre>%s</pre>' % (brew))
         return response
     
-    def fixPath(self, path):
-        """docstring for fixPath"""
-        rel_path = path.replace(self.brew_url, '')
-        brewed_path = os.path.join(self.brewed, rel_path)
-        unbrewed_path = os.path.join(self.unbrewed, rel_path.replace('.js', '.coffee'))
+    def fix_path(self, path):
+        """
+        
+        """
+        rel_path = path.replace(self.unbrewed, '')
+        brewed_path = os.path.join(self.brewed, rel_path[1:])
+        unbrewed_path = os.path.join(self.unbrewed, rel_path[1:])
         return (brewed_path, unbrewed_path)
     
     def brew(self, path):
-        """docstring for brew"""
-        brewed_path, unbrewed_path = self.fixPath(path)
+        """
         
-        if not os.path.exists(unbrewed_path):
-            return
-        
+        """
+        brewed_path, unbrewed_path = self.fix_path(path)
         cmd = '%s --output %s --compile %s' % (self.coffee, os.path.split(brewed_path)[0], unbrewed_path)
+        process = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out = process.communicate()
         
-        print cmd
-        
-        subprocess.call(cmd, shell=True)
+        if process.returncode is 1:
+            return out[1]
+        return 0
