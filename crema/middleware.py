@@ -45,7 +45,7 @@ class CremaMiddleware(object):
             for directory, dirnames, filenames in os.walk(self.unbrewed):
                 for file in filenames:
                     if file.endswith('.coffee'):
-                        print '[Crema] Brewing Coffeescript for: "%s"' % os.path.join(directory, file)
+                        # print '[Crema] Brewing Coffeescript for: "%s"' % os.path.join(directory, file)
                         brew = self.brew(os.path.join(directory, file))
                         if brew is not 0:
                             return HttpResponse('<pre>%s</pre>' % (brew))
